@@ -81,3 +81,4 @@ loyaltyCardSchema.set('toObject', { virtuals: true });
 const loyaltyCardModel = db.model('fidelity', loyaltyCardSchema);
 
 module.exports = loyaltyCardModel;
+
