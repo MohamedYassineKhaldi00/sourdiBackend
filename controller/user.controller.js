@@ -3,9 +3,9 @@ const UserService = require('../services/user.services');
 
 exports.register = async (req, res, next) => {
     try {
-        const { phoneNumber, password, isMerchant, merchantName ,createdAt } = req.body;
+        const { email, userName, password, isMerchant, merchantName ,createdAt } = req.body;
 
-         await UserService.registerUser(phoneNumber, password, isMerchant, merchantName, createdAt);
+         await UserService.registerUser(email, userName, password, isMerchant, merchantName, createdAt);
 
         res.json({ status: true, success: "User Registered Successfully" })
     } catch (error) {
@@ -16,21 +16,21 @@ exports.register = async (req, res, next) => {
 
 exports.login = async (req, res, next) => {
     try {
-        const { phoneNumber, password } = req.body;
+        const { email , password } = req.body;
 
-        const user = await UserService.checkuser(phoneNumber);
+        const user = await UserService.checkuser(email);
 
         if (!user) {
-            throw new Error("Invalid phone number or password");
+            throw new Error("Invalid email or password");
         }
 
         const isMatch = await user.comparePassword(password);
 
         if (!isMatch) {
-            throw new Error("Invalid phone number or password");
+            throw new Error("Invalid email or password");
         }
 
-        let tokenData = { _id: user._id, phoneNumber: user.phoneNumber, userId: user.userId, isMerchant: user.isMerchant, merchantName: user.merchantName};
+        let tokenData = { _id: user._id, email: user.email, userName: user.userName,  userId: user.userId, isMerchant: user.isMerchant, merchantName: user.merchantName};
 
         const token = await UserService.generateToken(tokenData, 'secretKey', '1h')
 
@@ -70,10 +70,10 @@ exports.deleteAccount = async (req, res) => {
     }
 }
 
-exports.checkNumber = async (req, res) => {
+exports.checkEmail = async (req, res) => {
     try {
-        const phoneNumber = req.body.phoneNumber; // Correctly access phoneNumber from the request body
-        const userExists = await UserService.checkNumberUniqueness(phoneNumber);
+        const email = req.body.email; // Correctly access email from the request body
+        const userExists = await UserService.checkEmailUniqueness(email);
         if (userExists) {
             return res.status(200).json({ exists: true });
         } else {
@@ -86,13 +86,49 @@ exports.checkNumber = async (req, res) => {
 
 exports.changePassword = async (req, res) => {
     try {
-        const { phoneNumber, newPassword } = req.body;
-        const result = await UserService.changePassword(phoneNumber, newPassword);
+        const { email, newPassword } = req.body;
+        const result = await UserService.changePassword(email, newPassword);
         res.status(200).json(result);
     } catch (error) {
         res.status(500).json({ status: false, error: error.message });
     }
 }
+
+exports.sendVerificationEmail = async (req, res, next) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ status: false, error: "Email is required" });
+        }
+
+        await UserService.sendVerificationEmail(email);
+
+        res.json({ status: true, success: "Verification email sent successfully" });
+    } catch (error) {
+        next(error); // Ensure to pass errors to the error handler
+    }
+};
+
+exports.verifyCode = async (req, res, next) => {
+    try {
+        const { email, code } = req.body;
+
+        if (!email || !code) {
+            return res.status(400).json({ status: false, error: "Email and code are required" });
+        }
+
+        const isValid = await UserService.verifyConfirmationCode(email, code);
+
+        if (isValid) {
+            res.json({ status: true, success: "Code verified successfully" });
+        } else {
+            res.status(400).json({ status: false, error: "Invalid or expired code" });
+        }
+    } catch (error) {
+        next(error); // Ensure to pass errors to the error handler
+    }
+};
 
 exports.fidelityList = async (res) => {
     

@@ -8,8 +8,12 @@ router.post('/login',UserController.login);
 router.get('/userList', UserController.userList)
 router.post('/logout', UserController.logout); // Add logout route
 router.delete('/deleteAccount', UserController.deleteAccount); // Add delete account route
-router.post('/checkNumberUniqueness',UserController.checkNumber);
+router.post('/checkEmailUniqueness',UserController.checkEmail);
 router.post('/changePassword', UserController.changePassword);
+router.post('/sendEmail', UserController.sendVerificationEmail);
+router.post('/verifyOTPCode', UserController.verifyCode);
+
+
 
 router.patch('/updateUser', async (req, res) => {
   const { userId, isMerchant, merchantName } = req.body;

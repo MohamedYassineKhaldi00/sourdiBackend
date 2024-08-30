@@ -1,10 +1,14 @@
 const UserModel = require('../model/user.model');
+const EmailVerificationModel = require('../model/emailVerification.model');
+
 const jwt = require('jsonwebtoken')
+const nodemailer = require('nodemailer');
+
 
 class UserService {
-    static async registerUser(phoneNumber, password, isMerchant, merchantName, createdAt) {
+    static async registerUser(email, userName, password, isMerchant, merchantName, createdAt) {
         try {
-            const createUser = new UserModel({ phoneNumber, password, isMerchant, merchantName, createdAt });
+            const createUser = new UserModel({ email, userName, password, isMerchant, merchantName, createdAt });
             return await createUser.save();
         } catch (err) {
             throw err;
@@ -12,9 +16,9 @@ class UserService {
     }
     
 
-    static async checkuser(phoneNumber) {
+    static async checkuser(email) {
         try {
-            return await UserModel.findOne({ phoneNumber });
+            return await UserModel.findOne({ email });
         } catch (error) {
             throw err;
 
@@ -45,18 +49,18 @@ class UserService {
         }
     }
 
-    static async checkNumberUniqueness(phoneNumber) {
+    static async checkEmailUniqueness(email) {
         try {
-            const user = await UserModel.findOne({ phoneNumber }); // Query database to find user by phoneNumber
+            const user = await UserModel.findOne({ email }); // Query database to find user by email
             return !!user; // Return true if user exists, false otherwise
         } catch (error) {
             throw error; // Throw error if database query fails
         }
     }
 
-    static async changePassword(phoneNumber, newPassword) {
+    static async changePassword(email, newPassword) {
         try {
-            const user = await UserModel.findOne({ phoneNumber });
+            const user = await UserModel.findOne({ email });
             if (!user) {
                 throw new Error("User not found");
             }
@@ -66,8 +70,127 @@ class UserService {
             throw error;
         }
     }
+    static async sendVerificationEmail(email) {
+        try {
+            let transporter = nodemailer.createTransport({
+                service: 'iCloud',
+                secure: false,
+                auth: {
+                    user: 'tn.sourdi@icloud.com',
+                    pass: 'hjbs-vvkz-vqpp-mphh' // Use your app-specific password
+                }
+            });
+
+            function generateConfirmationCode() {
+                return Math.floor(10000 + Math.random() * 90000).toString();
+            }
+
+            let confirmationCode = generateConfirmationCode();
+
+            let mailOptions = {
+                from: '"Sourdi - Fidélité" <tn.sourdi@icloud.com>',
+                to: email,
+                subject: 'Vérifiez votre adresse e-mail',
+                html: `
+                <!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vérification de l'adresse e-mail</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 15px; /* Rounded corners */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border: 2px solid #ddd; /* White background border */
+        }
+        .logo img {
+            width: 150px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .subtitle {
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+        .confirmation-code {
+            font-size: 30px;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+        .small-text {
+            font-size: 12px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <img src="https://firebasestorage.googleapis.com/v0/b/sourdi.appspot.com/o/assets%2Flogo1.png?alt=media&token=7670b4ab-74fd-45b0-9ec3-d2534004cf5c" alt="Logo">
+        </div>
+        <h1>Vérifiez votre adresse e-mail</h1>
+        <p class="subtitle">Veuillez saisir le code de confirmation ci-dessous pour terminer la configuration de votre compte</p>
+        <p class="confirmation-code">${confirmationCode}</p>
+        <p class="small-text">Si vous estimez qu'il s'agit d'une erreur et que vous n'avez pas initié cette demande de création de compte, veuillez ignorer ce courriel.</p>
+    </div>
+</body>
+</html>
+                `,
+            };
+             
+       
+                const emailVerification = new EmailVerificationModel({
+                    email,
+                    confirmationCode,
+                    codeExpiresAt: Date.now() + 15 * 60 * 1000 // Code expires in 15 minutes
+                });
+                await emailVerification.save();
+            
+
+            await transporter.sendMail(mailOptions);
+        } catch (error) {
+            throw error;
+        }
     
+    }
     
+    static async verifyConfirmationCode(email, code) {
+        try {
+            const emailVerification = await EmailVerificationModel.findOne({ email });
+            if (!emailVerification) {throw new Error('Email verification record not found')}
+
+           else if (emailVerification.confirmationCode !== code) {
+                throw new Error('Invalid confirmation code');
+            }
+
+           else if (Date.now() > emailVerification.codeExpiresAt) {
+                throw new Error('Confirmation code has expired');
+            } else {
+                await EmailVerificationModel.deleteOne({ email });
+                return true;
+
+            }
+
+        } catch (error) {
+            throw error;
+        }
+    }
 
 }
 

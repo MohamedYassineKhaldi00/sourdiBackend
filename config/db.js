@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
-
-const connection = mongoose.createConnection('mongodb+srv://sourditn:w58kwehvHZroQGjT@sourdi.dymm7.mongodb.net/').on('open',() => {
+// mongodb+srv://sourditn:w58kwehvHZroQGjT@sourdi.dymm7.mongodb.net/
+const connection = mongoose.createConnection('mongodb://localhost:27017').on('open',() => {
     console.log('MongoDb Connected');
 }).on('error',() => {
     console.log('MongoDb connection error')

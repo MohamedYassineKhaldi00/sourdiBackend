@@ -10,7 +10,12 @@ const userSchema = new Schema({
     userId: {
         type: Schema.Types.ObjectId,
     },
-    phoneNumber: {
+    userName: {
+        type: String,
+        required: true,
+        unique: false
+    },
+    email: {
         type: String,
         required: true,
         unique: true
