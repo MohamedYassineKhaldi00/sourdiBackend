@@ -77,7 +77,7 @@ class UserService {
                 secure: false,
                 auth: {
                     user: 'tn.sourdi@icloud.com',
-                    pass: 'hjbs-vvkz-vqpp-mphh' // Use your app-specific password
+                    pass: process.env.AppSpecificPassword // Use your app-specific password
                 }
             });
 
