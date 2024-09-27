@@ -1,8 +1,26 @@
 const UserModel = require('../model/user.model');
 const EmailVerificationModel = require('../model/emailVerification.model');
 
-const jwt = require('jsonwebtoken')
 const nodemailer = require('nodemailer');
+
+const TIMEOUT_DURATION = 12000; // 12 seconds
+
+const withTimeout = (promise) => {
+    return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+            reject(new Error('Request timed out after 12 seconds'));
+        }, TIMEOUT_DURATION);
+
+        promise.then((result) => {
+            clearTimeout(timeout);
+            resolve(result);
+        }).catch((err) => {
+            clearTimeout(timeout);
+            reject(err);
+        });
+    });
+}
+
 
 
 class UserService {
@@ -18,20 +36,21 @@ class UserService {
 
     static async checkuser(email) {
         try {
-            return await UserModel.findOne({ email });
+            return await withTimeout(UserModel.findOne({ email }));
         } catch (error) {
             throw err;
 
         }
     }
 
-    static async generateToken(data, secretKey, expiresIn) {
+    static async generateAccessToken(tokenData, secretKey) {
         try {
-            return jwt.sign(data, secretKey, { expiresIn });
+            return jwt.sign(tokenData, secretKey);
         } catch (error) {
             throw error;
         }
     }
+
 
     static async getAllUsers() {
         try {
@@ -51,16 +70,36 @@ class UserService {
 
     static async checkEmailUniqueness(email) {
         try {
-            const user = await UserModel.findOne({ email }); // Query database to find user by email
+            const user = await withTimeout(UserModel.findOne({ email })); // Query database to find user by email
             return !!user; // Return true if user exists, false otherwise
         } catch (error) {
             throw error; // Throw error if database query fails
         }
     }
 
+    static async verifyAccount(email, password) {
+        try {
+            const user = await withTimeout(UserModel.findOne({ email }));
+
+            if (!user) {
+                return null;
+            }
+
+            const isMatch = withTimeout(await user.comparePassword(password));
+
+            if (!isMatch) {
+                return null;
+            }
+
+            return user;
+        } catch (err) {
+            throw err;
+        }
+    }
+
     static async changePassword(email, newPassword) {
         try {
-            const user = await UserModel.findOne({ email });
+            const user = withTimeout(await UserModel.findOne({ email }));
             if (!user) {
                 throw new Error("User not found");
             }
@@ -70,6 +109,7 @@ class UserService {
             throw error;
         }
     }
+    
     static async sendVerificationEmail(email) {
         try {
             let transporter = nodemailer.createTransport({
@@ -162,9 +202,14 @@ class UserService {
                 });
                 await emailVerification.save();
             
+                await transporter.sendMail(mailOptions);
 
-            await transporter.sendMail(mailOptions);
         } catch (error) {
+
+            if (error.code === 11000) { // Duplicate key error code
+                return { success: false, message: 'Duplicate' };
+            }
+
             throw error;
         }
     
@@ -180,6 +225,7 @@ class UserService {
             }
 
            else if (Date.now() > emailVerification.codeExpiresAt) {
+                await EmailVerificationModel.deleteOne({ email });
                 throw new Error('Confirmation code has expired');
             } else {
                 await EmailVerificationModel.deleteOne({ email });
@@ -191,6 +237,8 @@ class UserService {
             throw error;
         }
     }
+
+
 
 }
 

@@ -1,4 +1,21 @@
+require('dotenv').config();
+
 const UserService = require('../services/user.services');
+const EmailVerificationModel = require('../model/emailVerification.model');
+const jwt = require('jsonwebtoken')
+
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization']
+    const token = authHeader && authHeader.split(' ')[1]
+    if (token == null) return res.sendStatus(401)
+
+     jwt.verify(token, process.env.JWT_SECRET_KEY, (err, tokenData) => {
+        if (err) return res.sendStatus(403)
+            req.tokenData = tokenData
+        next()
+     })   
+}
+exports.authenticateToken = authenticateToken; // Export middleware
 
 
 exports.register = async (req, res, next) => {
@@ -16,35 +33,52 @@ exports.register = async (req, res, next) => {
 
 exports.login = async (req, res, next) => {
     try {
-        const { email , password } = req.body;
+        const { email, password } = req.body;
 
-        const user = await UserService.checkuser(email);
+        const user = await  UserService.checkuser(email);
 
         if (!user) {
             throw new Error("Invalid email or password");
         }
 
-        const isMatch = await user.comparePassword(password);
+        const isMatch = await  user.comparePassword(password);
 
         if (!isMatch) {
             throw new Error("Invalid email or password");
         }
+        
+        let tokenData = { 
+            _id: user._id, 
+            email: user.email, 
+            userName: user.userName,  
+            userId: user.userId, 
+            isMerchant: user.isMerchant, 
+            merchantName: user.merchantName
+        };
 
-        let tokenData = { _id: user._id, email: user.email, userName: user.userName,  userId: user.userId, isMerchant: user.isMerchant, merchantName: user.merchantName};
+        // static async generateAccessToken(tokenData, secretKey) {
+        //     try {
+        //         return jwt.sign(tokenData, secretKey);
+        //     } catch (error) {
+        //         throw error;
+        //     }
+        // }
 
-        const token = await UserService.generateToken(tokenData, 'secretKey', '1h')
-
-        res.status(200).json({ status: true, token: token })
+        const token = await jwt.sign(tokenData, process.env.JWT_SECRET_KEY);
+       
+       
+        res.status(200).json({ status: true, token: token });
 
     } catch (error) {
+        console.error('Login Error:', error); // Log error details to the console
+
         res.status(500).json({ status: false, error: error.message });
     }
 }
 
-
 exports.userList = async (req, res) => {
     try {
-        const users = await UserService.getAllUsers();
+        const users =await UserService.getAllUsers();
         res.status(200).json(users);
     } catch (error) {
         res.status(500).json({ status: false, error: error.message });
@@ -53,7 +87,7 @@ exports.userList = async (req, res) => {
 
 exports.logout = async (req, res) => {
     try {
-        const user = await UserService.logout();
+        const user = await  UserService.logout();
         res.status(200).json({ status: true, message: "Logout successful" });
     } catch (error) {
         res.status(500).json({ status: false, error: error.message });
@@ -84,6 +118,22 @@ exports.checkEmail = async (req, res) => {
     }
 }
 
+exports.verifyAccount = async (req, res, next) => {
+    try {
+        const { email, password } = req.body;
+
+        const user = await  UserService.verifyAccount(email, password);
+
+        if (!user) {
+            return res.status(404).json({ status: false, message: 'Invalid email or password' });
+        }
+
+        res.status(200).json({ status: true, message: 'Account verified successfully' });
+    } catch (error) {
+        res.status(500).json({ status: false, error: error.message });
+    }
+}
+
 exports.changePassword = async (req, res) => {
     try {
         const { email, newPassword } = req.body;
@@ -102,8 +152,12 @@ exports.sendVerificationEmail = async (req, res, next) => {
             return res.status(400).json({ status: false, error: "Email is required" });
         }
 
-        await UserService.sendVerificationEmail(email);
+        console.log('Attempting to send email to:', email);
 
+        await UserService.sendVerificationEmail(email);
+        
+        console.log('Success');
+        
         res.json({ status: true, success: "Verification email sent successfully" });
     } catch (error) {
         next(error); // Ensure to pass errors to the error handler
@@ -118,7 +172,7 @@ exports.verifyCode = async (req, res, next) => {
             return res.status(400).json({ status: false, error: "Email and code are required" });
         }
 
-        const isValid = await UserService.verifyConfirmationCode(email, code);
+        const isValid =  await  UserService.verifyConfirmationCode(email, code);
 
         if (isValid) {
             res.json({ status: true, success: "Code verified successfully" });
@@ -129,6 +183,17 @@ exports.verifyCode = async (req, res, next) => {
         next(error); // Ensure to pass errors to the error handler
     }
 };
+
+exports.deleteVerification = async (req, res, next) => {
+            try {
+                const { email } = req.body;
+
+                await EmailVerificationModel.deleteOne({ email });
+
+            } catch (error) {
+                next(error); // Ensure to pass errors to the error handler
+            }
+        };
 
 exports.fidelityList = async (res) => {
     

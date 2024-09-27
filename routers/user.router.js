@@ -4,18 +4,20 @@ const User = require('../model/user.model'); // Update with your User model path
 
 
 router.post('/registration',UserController.register);
-router.post('/login',UserController.login);
+router.post('/login', UserController.login);
 router.get('/userList', UserController.userList)
 router.post('/logout', UserController.logout); // Add logout route
-router.delete('/deleteAccount', UserController.deleteAccount); // Add delete account route
+router.delete('/deleteAccount', UserController.authenticateToken, UserController.deleteAccount); // Add delete account route
 router.post('/checkEmailUniqueness',UserController.checkEmail);
 router.post('/changePassword', UserController.changePassword);
 router.post('/sendEmail', UserController.sendVerificationEmail);
 router.post('/verifyOTPCode', UserController.verifyCode);
+router.post('/verifyAccount', UserController.authenticateToken, UserController.verifyAccount);
+router.post('/deleteVerification', UserController.deleteVerification);
 
 
 
-router.patch('/updateUser', async (req, res) => {
+router.patch('/updateUser', UserController.authenticateToken, async (req, res) => {
   const { userId, isMerchant, merchantName } = req.body;
 
   try {

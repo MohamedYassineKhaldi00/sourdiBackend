@@ -61,21 +61,8 @@ const loyaltyCardSchema = new Schema({
     },
     stampDate: [Date],
     coupons: [Coupons], // Array of coupons
-
-    cardCreatedAt: {
-        type: Date,
-        default: Date.now
-    }
 });
 
-// Virtual field to count the number of coupons
-loyaltyCardSchema.virtual('couponCount').get(function() {
-    return this.coupons.length;
-});
-
-// Include the virtual fields in the JSON output
-loyaltyCardSchema.set('toJSON', { virtuals: true });
-loyaltyCardSchema.set('toObject', { virtuals: true });
 
 
 const loyaltyCardModel = db.model('fidelity', loyaltyCardSchema);

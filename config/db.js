@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-const connection = mongoose.createConnection(process.env.MONGODB_URI, {
+const connection = mongoose.createConnection('mongodb://localhost:27017', {
   connectTimeoutMS: 0,  // No time limit for initial connection
   socketTimeoutMS: 0,   // No time limit for ongoing socket communication
 })

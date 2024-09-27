@@ -1,29 +1,39 @@
 const router = require('express').Router();
 const loyaltyCardsController = require('../controller/loyaltyCards.controller');
+const { authenticateToken } = require('../controller/user.controller'); // Import authentication middleware
+
+
+router.get('/fetchFidelity', authenticateToken, loyaltyCardsController.fetchFidelity);
 
 // Update stampsCollected for a specific loyalty card
 // Route for updating stamps and possibly adding a coupon
-router.post('/updateStamps', loyaltyCardsController.updateStamps);
+router.post('/updateStamps', authenticateToken, loyaltyCardsController.updateStamps);
 
-router.post('/storeLoyaltyCard', loyaltyCardsController.createLoyaltyCard);
+router.post('/storeLoyaltyCard', authenticateToken, loyaltyCardsController.createLoyaltyCard);
 
-router.post('/getLoyaltyCardList', loyaltyCardsController.getLoyaltyCardData);
+router.post('/getLoyaltyCardList', authenticateToken, loyaltyCardsController.getLoyaltyCardData);
 
-router.post('/checkIdExists', loyaltyCardsController.checkIdExists);
+router.post('/checkIdExists', authenticateToken, loyaltyCardsController.checkIdExists);
 
-router.post('/getCardDataById', loyaltyCardsController.getCardData);
+router.post('/getCardDataById', authenticateToken, loyaltyCardsController.getCardData);
 
-router.post('/getLoyaltyCardPathList', loyaltyCardsController.getLoyaltyCardImage);
+router.post('/getLoyaltyCardPathList', authenticateToken, loyaltyCardsController.getLoyaltyCardImage);
 
-router.post('/deleteLoyaltyCard', loyaltyCardsController.deleteLoyaltydCard); // New route for deleting a card
+router.post('/deleteLoyaltyCard', authenticateToken, loyaltyCardsController.deleteLoyaltydCard); // New route for deleting a card
 
-router.post('/getCoupons', loyaltyCardsController.getCouponsByUserId);
+router.post('/getCoupons', authenticateToken, loyaltyCardsController.getCouponsByUserId);
 
-router.post('/getCouponsById', loyaltyCardsController.getCouponsById);
+router.post('/getCouponsById', authenticateToken, loyaltyCardsController.getCouponsById);
 
-router.post('/isCouponValid', loyaltyCardsController.checkIfCouponsExists);
+router.post('/isCouponValid', authenticateToken, loyaltyCardsController.checkIfCouponsExists);
 
-router.post('/deleteCoupon', loyaltyCardsController.deleteCoupon);
+router.post('/deleteCoupon', authenticateToken, loyaltyCardsController.deleteCoupon);
+
+router.post('/validateCode', authenticateToken, loyaltyCardsController.validateCode);
+
+
+
+
 
 
 

@@ -1,0 +1,12 @@
+config:
+  target: 'http://192.168.1.140:3000'
+  phases:
+    - duration: 10
+      arrivalRate: 1000000  # 1000 users per second
+scenarios:
+  - flow:
+      - get:
+          url: "/"
+      - post:
+          url: "/login"
+
