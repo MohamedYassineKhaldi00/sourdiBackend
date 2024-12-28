@@ -30,23 +30,25 @@ exports.register = async (req, res, next) => {
     }
 
 }
-
 exports.login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
-        const user = await  UserService.checkuser(email);
+        // Logging the email input for debugging
+
+        const user = await UserService.checkuser(email);
 
         if (!user) {
-            throw new Error("Invalid email or password");
+            throw new Error("Invalid email");
         }
 
-        const isMatch = await  user.comparePassword(password);
+    
+        const isMatch = await user.comparePassword(password);
 
         if (!isMatch) {
-            throw new Error("Invalid email or password");
+            throw new Error("Invalid password");
         }
-        
+
         let tokenData = { 
             _id: user._id, 
             email: user.email, 
@@ -56,25 +58,16 @@ exports.login = async (req, res, next) => {
             merchantName: user.merchantName
         };
 
-        // static async generateAccessToken(tokenData, secretKey) {
-        //     try {
-        //         return jwt.sign(tokenData, secretKey);
-        //     } catch (error) {
-        //         throw error;
-        //     }
-        // }
-
-        const token = await jwt.sign(tokenData, process.env.JWT_SECRET_KEY);
-       
+        const token = jwt.sign(tokenData, process.env.JWT_SECRET_KEY);
        
         res.status(200).json({ status: true, token: token });
 
     } catch (error) {
         console.error('Login Error:', error); // Log error details to the console
-
         res.status(500).json({ status: false, error: error.message });
     }
-}
+};
+
 
 exports.userList = async (req, res) => {
     try {

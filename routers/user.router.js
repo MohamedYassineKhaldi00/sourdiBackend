@@ -1,6 +1,8 @@
 const router = require('express').Router();
 const UserController = require('../controller/user.controller');
 const User = require('../model/user.model'); // Update with your User model path
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
 
 
 router.post('/registration',UserController.register);
@@ -17,8 +19,9 @@ router.post('/deleteVerification', UserController.deleteVerification);
 
 
 
-router.patch('/updateUser', UserController.authenticateToken, async (req, res) => {
+router.patch('/updateUser', UserController.authenticateToken,  async (req, res) => {
   const { userId, isMerchant, merchantName } = req.body;
+  const oldToken = req.headers.authorization.split(' ')[1]; // Extract the existing token
 
   try {
     // Find the user by userId
@@ -32,7 +35,13 @@ router.patch('/updateUser', UserController.authenticateToken, async (req, res) =
     user.merchantName = merchantName;
     await user.save();
 
-    res.status(200).json({ message: 'User updated successfully' });
+    const decoded = jwt.verify(oldToken, process.env.JWT_SECRET_KEY);
+    decoded.isMerchant = isMerchant;
+    decoded.merchantName = merchantName;
+
+    const updatedToken = jwt.sign(decoded, process.env.JWT_SECRET_KEY);
+
+    res.status(200).json({ message: 'User updated successfully', token: updatedToken });
   } catch (error) {
     res.status(500).json({ message: 'Error updating user', error });
   }

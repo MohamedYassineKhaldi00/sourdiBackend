@@ -1,3 +1,4 @@
+import 'newrelic';
 const express = require('express');
 const bodyParser = require('body-parser');
 const userRouter = require('./routers/user.router');

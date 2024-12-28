@@ -51,6 +51,10 @@ const loyaltyCardSchema = new Schema({
         type: Boolean,
         required : false,
     },
+    couponValue: {
+        type: String,
+        required : false,
+    },
     stampsCollected: { 
         type: Number,
         default: '0'

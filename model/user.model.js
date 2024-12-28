@@ -39,17 +39,26 @@ const userSchema = new Schema({
     }
 });
 
-userSchema.pre('save', async function () {
+userSchema.pre('save', async function (next) {
     try {
         var user = this;
         user.userId = user._id;
+
+        // Only hash the password if it has been modified (or is new)
+        if (!user.isModified('password')) {
+            return next();
+        }
+
         const salt = await bcrypt.genSalt(10);
         const hashpass = await bcrypt.hash(user.password, salt);
         user.password = hashpass;
+
+        next();
     } catch (error) {
-        throw error;
+        return next(error);
     }
 });
+
 
 userSchema.methods.comparePassword = async function (userPassword) {
     try {
@@ -62,10 +71,12 @@ userSchema.methods.comparePassword = async function (userPassword) {
 
 userSchema.methods.updatePassword = async function(newPassword) {
     try {
-        this.password = newPassword;
+        const salt = await bcrypt.genSalt(10);
+        const hashpass = await bcrypt.hash(newPassword, salt);
+        this.password = hashpass;
         return await this.save();
     } catch (error) {
-        throw error;
+        throw error; // You can also log the error if needed
     }
 };
 

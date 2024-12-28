@@ -3,9 +3,9 @@ const LoyaltyService = require('../services/loyaltyCards.services');
 // Controller function to register a new card
 exports.createLoyaltyCard = async (req, res, next) => {
     try {
-        const { userId, storeName, storeLogo, loyaltyCardName, barCode, loyaltyCardImage, hasStampFeature, stampsCollected, stampsGroupsof10, stampDate } = req.body;
+        const { userId, storeName, storeLogo, loyaltyCardName, barCode, loyaltyCardImage, hasStampFeature, couponValue, stampsCollected, stampsGroupsof10, stampDate } = req.body;
 
-        let card = await LoyaltyService.createLoyaltyCard(userId, storeName, storeLogo, loyaltyCardName, barCode, loyaltyCardImage, hasStampFeature, stampsCollected, stampsGroupsof10, stampDate);
+        let card = await LoyaltyService.createLoyaltyCard(userId, storeName, storeLogo, loyaltyCardName, barCode, loyaltyCardImage, hasStampFeature, couponValue, stampsCollected, stampsGroupsof10, stampDate);
 
         res.json({ status: true, success: card })
     } catch (error) {
@@ -153,7 +153,8 @@ exports.validateCode = async (req, res, next) => {
             '79SL39GGJ20FKALM73HV84JNHD9011': { storeName: "Parad'Ice"},
             'HV74HJMNW927186DGCB72498NNZKJ1': { storeName: "Biscotti"},
             '927GHDN39X62MPQ84NDH4610CCT589': { storeName: "Munchies"},
-            'AJV910QQIRJ5738NV848N9283NFN23': { storeName: 'Cosmito'}
+            'AJV910QQIRJ5738NV848N9283NFN23': { storeName: 'Cosmito'},
+            'OF5H220XOR58WNAMGGG49A7K4KK31P': { storeName: "Nom de l'enseigne"}
           };
   
     if (codesData.hasOwnProperty(code)) {

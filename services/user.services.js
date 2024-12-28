@@ -85,7 +85,7 @@ class UserService {
                 return null;
             }
 
-            const isMatch = withTimeout(await user.comparePassword(password));
+            const isMatch = await withTimeout(user.comparePassword(password));
 
             if (!isMatch) {
                 return null;
@@ -99,7 +99,7 @@ class UserService {
 
     static async changePassword(email, newPassword) {
         try {
-            const user = withTimeout(await UserModel.findOne({ email }));
+            const user = await withTimeout(UserModel.findOne({ email }));
             if (!user) {
                 throw new Error("User not found");
             }

@@ -20,9 +20,9 @@ const withTimeout = (promise) => {
 }
 
 class LoyaltyService {
-    static async createLoyaltyCard(userId, storeName, storeLogo, loyaltyCardName, barCode, loyaltyCardImage, hasStampFeature, stampsCollected, stampsGroupsof10, stampDate) {
+    static async createLoyaltyCard(userId, storeName, storeLogo, loyaltyCardName, barCode, loyaltyCardImage, hasStampFeature, couponValue, stampsCollected, stampsGroupsof10, stampDate) {
         try {
-            const createLoyaltyCard = new loyaltyCardModel({userId, storeName, storeLogo, loyaltyCardName, barCode, loyaltyCardImage, hasStampFeature, stampsCollected, stampsGroupsof10, stampDate });
+            const createLoyaltyCard = new loyaltyCardModel({userId, storeName, storeLogo, loyaltyCardName, barCode, loyaltyCardImage, hasStampFeature, couponValue, stampsCollected, stampsGroupsof10, stampDate });
             return await createLoyaltyCard.save();
         } catch (error) {
             throw error;
@@ -94,14 +94,18 @@ class LoyaltyService {
             }
 
             if (card.stampsCollected >= 10) {
+                const excessStamps = card.stampsCollected - 10; // Calculate excess
                 const couponValue = getCouponValueForStore(card.storeName);
+
+
                 card.coupons.push({
                     couponStore: card.storeName,
                     value: couponValue,
                     createdAt: currentTime
                 });
+
                 card.stampsGroupsof10 += 1;
-                card.stampsCollected = 0;
+                card.stampsCollected = excessStamps;
             }
 
             await card.save();
@@ -110,12 +114,15 @@ class LoyaltyService {
             throw error;
         }
 
+        
         function getCouponValueForStore(storeName) {
             const couponValues = {
                 "Klitch": "40%",
                 "Parad'Ice": "50%",
                 "Biscotti": "x2",
-                "Munchies": "Séléction gratuite"
+                "Munchies": "Séléction gratuite",
+                "Cosmito": "1 acheté, 1 offert",
+                "Nom de l'enseigne": '1 acheté, 1 offert'
             };
             return couponValues[storeName] || "No Coupon";
         }
