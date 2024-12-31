@@ -1,0 +1,22 @@
+Directory structure:
+└── MohamedYassineKhaldi00-sourdiBackend/
+    ├── services/
+    │   ├── loyaltyCards.services.js
+    │   └── user.services.js
+    ├── test.yml
+    ├── package.json
+    ├── newrelic.js
+    ├── controller/
+    │   ├── user.controller.js
+    │   └── loyaltyCards.controller.js
+    ├── config/
+    │   └── db.js
+    ├── routers/
+    │   ├── loyaltyCards.router.js
+    │   └── user.router.js
+    ├── model/
+    │   ├── user.model.js
+    │   ├── loyaltyCards.model.js
+    │   └── emailVerification.model.js
+    ├── README.md
+    └── index.js
