@@ -1,4 +1,8 @@
 const LoyaltyService = require('../services/loyaltyCards.services');
+const connection = require('../config/db');
+const mongoose = require('mongoose');
+const ObjectId = mongoose.Types.ObjectId;
+
 
 // Controller function to register a new card
 exports.createLoyaltyCard = async (req, res, next) => {
@@ -144,7 +148,7 @@ exports.deleteCoupon = async (req, res, next) => {
 };
 
 
-exports.validateCode = async (req, res, next) => {
+exports.validateCodeMerchant = async (req, res, next) => {
     try {
         const { code } = req.body;
 
@@ -165,6 +169,89 @@ exports.validateCode = async (req, res, next) => {
 
     } catch (error) {
         next(error);
+    }
+};
+
+
+
+exports.validateStampCode = async (req, res, next) => {
+    try {
+        const { code, cardId } = req.body;
+
+        if (!code || !cardId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Both code and cardId are required',
+            });
+        }
+
+        const fidelitiesCollection = connection.collection('fidelities');
+        const codesCollection = connection.collection('codes');
+        
+        const card = await fidelitiesCollection.findOne({ _id: new ObjectId(cardId) });
+
+        if (!card) {
+            return res.status(404).json({
+                success: false,
+                message: 'Card not found',
+            });
+        }
+
+        const storeName = card.storeName;
+        const storeDocument = await codesCollection.findOne({ [`${storeName}`]: { $exists: true } });
+
+        if (!storeDocument || !storeDocument[storeName]) {
+            return res.status(404).json({
+                success: false,
+                message: 'Store name not found in codes collection',
+            });
+        }
+
+        const codesArray = storeDocument[storeName];
+
+        if (!codesArray.includes(code)) {
+            return res.status(404).json({ 
+                success: false,
+                message: 'Invalid stamp code for this store',
+            });
+        }
+
+        const session = await connection.startSession();
+        
+        try {
+            session.startTransaction();
+
+            await codesCollection.updateOne(
+                { _id: storeDocument._id },
+                { $pull: { [`${storeName}`]: code } },
+                { session }
+            );
+
+            await fidelitiesCollection.updateOne(
+                { _id: new ObjectId(cardId) },
+                { $inc: { stampsCollected: 2 } },
+                { session }
+            );
+
+            await session.commitTransaction();
+            
+            return res.status(200).json({
+                success: true,
+                message: 'Stamp code validated, used successfully, and stamps incremented',
+            });
+        } catch (error) {
+            await session.abortTransaction();
+            throw error;
+        } finally {
+            session.endSession();
+        }
+
+    } catch (error) {
+        console.error('Stamp validation error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+        });
     }
 };
 

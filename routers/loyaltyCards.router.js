@@ -29,7 +29,10 @@ router.post('/isCouponValid', authenticateToken, loyaltyCardsController.checkIfC
 
 router.post('/deleteCoupon', authenticateToken, loyaltyCardsController.deleteCoupon);
 
-router.post('/validateCode', authenticateToken, loyaltyCardsController.validateCode);
+router.post('/validateCodeMerchant', authenticateToken, loyaltyCardsController.validateCodeMerchant);
+
+router.post('/validateStampCode', authenticateToken, loyaltyCardsController.validateStampCode);
+
 
 
 

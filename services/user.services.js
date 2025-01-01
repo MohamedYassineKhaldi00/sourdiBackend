@@ -38,7 +38,7 @@ class UserService {
         try {
             return await withTimeout(UserModel.findOne({ email }));
         } catch (error) {
-            throw err;
+            throw error;
 
         }
     }
