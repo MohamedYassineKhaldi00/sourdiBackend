@@ -19,7 +19,7 @@ jobs:
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
-          node-version: '20.x'
+          node-version: '18.x'
 
       - name: npm install, build, and test
         run: |
@@ -42,9 +42,7 @@ jobs:
     environment:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-    permissions:
-      id-token: write #This is required for requesting the JWT
-
+    
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
@@ -54,13 +52,6 @@ jobs:
       - name: Unzip artifact for deployment
         run: unzip release.zip
       
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_5363BBF2734945FC80346326175B56E2 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_1A1F0192B3BE4A4EB14041ADD082EA81 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_5977B49284FA412BA60BF762C7E4EACC }}
-
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
@@ -68,4 +59,4 @@ jobs:
           app-name: 'sourdi'
           slot-name: 'Production'
           package: .
-          
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_A96CAA75FFB14F128FF3F8C85D255484 }}
