@@ -40,9 +40,38 @@ app.use(cors()); // Apply CORS middleware
 app.use('/', userRouter); // Mount userRouter at '/users'
 app.use('/', loyaltyCardsRouter); 
 
-    app.get('/', (req, res) => {
-      res.send('Jawi behi');
-    });
+app.get('/', (req, res) => {
+  const redirectScript = `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>App Redirect</title>
+      <script>
+          document.addEventListener("DOMContentLoaded", function() {
+              const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+
+              if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+                  // Redirect to App Store
+                  window.location.href = "https://apps.apple.com/app/";
+              } else if (/android/i.test(userAgent)) {
+                  // Redirect to Google Play
+                  window.location.href = "https://play.google.com/store/apps/details?id=com.facebook.katana";
+              } else {
+                  // Fallback URL
+                  window.location.href = "https://sourdi.web.app";
+              }
+          });
+      </script>
+  </head>
+  <body>
+      <p>Redirecting...</p>
+  </body>
+  </html>
+  `;
+  res.send(redirectScript);
+});
 
     app.listen(port, () => {
       console.log(`Server is listening on port http://localhost:${port}`);

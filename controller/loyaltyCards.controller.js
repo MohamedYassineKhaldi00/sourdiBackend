@@ -30,20 +30,20 @@ exports.getLoyaltyCardData = async (req, res, next) => {
 
 exports.checkIdExists = async (req, res, next) => {
     try {
-      const { id } = req.body;
-  
-      // Check ID existence
-      const result = await LoyaltyService.checkIdExists(id);
-  
-      // Respond with the result
-      res.json(result);
-    } catch (error) {
-      // Pass the error to the next middleware (error handler)
-      next(error);
-    }
-  };
+        const { id } = req.body;
 
-  exports.getCardData = async (req, res, next) => {
+        // Check ID existence
+        const result = await LoyaltyService.checkIdExists(id);
+
+        // Respond with the result
+        res.json(result);
+    } catch (error) {
+        // Pass the error to the next middleware (error handler)
+        next(error);
+    }
+};
+
+exports.getCardData = async (req, res, next) => {
     try {
         const { id } = req.body;
 
@@ -66,12 +66,12 @@ exports.getLoyaltyCardImage = async (req, res, next) => {
 
 exports.deleteLoyaltydCard = async (req, res, next) => {
     try {
-        const {id} = req.body; // Assuming you'll send the cardId to delete
+        const { id } = req.body; // Assuming you'll send the cardId to delete
 
         await LoyaltyService.getLoyaltyCardData(id);
         let deleted = await LoyaltyService.deleteLoyaltyCard(id);
 
-        res.json({status: true, success:deleted});
+        res.json({ status: true, success: deleted });
     } catch (error) {
         next(error);
     }
@@ -91,7 +91,7 @@ exports.updateStamps = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
-    
+
 };
 
 
@@ -141,7 +141,7 @@ exports.deleteCoupon = async (req, res, next) => {
 
         await LoyaltyService.deleteCouponById(id);
 
-        res.json({ status: true});
+        res.json({ status: true });
     } catch (error) {
         next(error);
     }
@@ -153,25 +153,24 @@ exports.validateCodeMerchant = async (req, res, next) => {
         const { code } = req.body;
 
         const codesData = {
-            'Z289238N5629836N2589N2365928N7': { storeName: 'Klitch'},
-            '79SL39GGJ20FKALM73HV84JNHD9011': { storeName: "Parad'Ice"},
-            'HV74HJMNW927186DGCB72498NNZKJ1': { storeName: "Biscotti"},
-            '927GHDN39X62MPQ84NDH4610CCT589': { storeName: "Munchies"},
-            'AJV910QQIRJ5738NV848N9283NFN23': { storeName: 'Cosmito'},
-            'OF5H220XOR58WNAMGGG49A7K4KK31P': { storeName: "Nom de l'enseigne"}
-          };
-  
-    if (codesData.hasOwnProperty(code)) {
-      res.status(200).json({ valid: true, data: codesData[code] });
-    } else {
-      res.status(403).json({ valid: false });
-    }
+            'Z289238N5629836N2589N2365928N7': { storeName: 'Klitch' },
+            '79SL39GGJ20FKALM73HV84JNHD9011': { storeName: "Parad'Ice" },
+            'HV74HJMNW927186DGCB72498NNZKJ1': { storeName: "Biscotti" },
+            '927GHDN39X62MPQ84NDH4610CCT589': { storeName: "Munchies" },
+            'AJV910QQIRJ5738NV848N9283NFN23': { storeName: 'Cosmito' },
+            'OF5H220XOR58WNAMGGG49A7K4KK31P': { storeName: "Nom de l'enseigne" }
+        };
+
+        if (codesData.hasOwnProperty(code)) {
+            res.status(200).json({ valid: true, data: codesData[code] });
+        } else {
+            res.status(403).json({ valid: false });
+        }
 
     } catch (error) {
         next(error);
     }
 };
-
 
 
 exports.validateStampCode = async (req, res, next) => {
@@ -187,7 +186,7 @@ exports.validateStampCode = async (req, res, next) => {
 
         const fidelitiesCollection = connection.collection('fidelities');
         const codesCollection = connection.collection('codes');
-        
+
         const card = await fidelitiesCollection.findOne({ _id: new ObjectId(cardId) });
 
         if (!card) {
@@ -210,14 +209,14 @@ exports.validateStampCode = async (req, res, next) => {
         const codesArray = storeDocument[storeName];
 
         if (!codesArray.includes(code)) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 success: false,
                 message: 'Invalid stamp code for this store',
             });
         }
 
         const session = await connection.startSession();
-        
+
         try {
             session.startTransaction();
 
@@ -227,18 +226,27 @@ exports.validateStampCode = async (req, res, next) => {
                 { session }
             );
 
-            await fidelitiesCollection.updateOne(
-                { _id: new ObjectId(cardId) },
-                { $inc: { stampsCollected: 2 } },
-                { session }
-            );
+            // Use updateStamps instead of directly updating the database
+            const updateResponse = await LoyaltyService.updateStamps(cardId, 2);
 
-            await session.commitTransaction();
-            
-            return res.status(200).json({
-                success: true,
-                message: 'Stamp code validated, used successfully, and stamps incremented',
-            });
+            if (updateResponse.status === true) {
+                await session.commitTransaction();
+
+                return res.status(200).json({
+                    success: true,
+                    message: 'Stamp code validated, used successfully, and stamps incremented',
+                });
+            } else {
+                await session.abortTransaction(); // Rollback the transaction if stamps update fails
+
+                return res.status(500).json({
+                    success: false,
+                    message: 'Vous ne pouvez mettre à jour les tampons qu\'une fois toutes les 4 heures.',
+                });
+            }
+
+
+
         } catch (error) {
             await session.abortTransaction();
             throw error;
@@ -255,38 +263,39 @@ exports.validateStampCode = async (req, res, next) => {
     }
 };
 
+
 exports.fetchFidelity = async (req, res, next) => {
     try {
-        
-      
+
+
         const fidelityList = [
             { name: "KIABI", carte: "CarteKiabi", hasStampFeature: false },
             { name: "Géant", carte: "CarteGéant", hasStampFeature: false },
             { name: "Baguette_&_Baguette", carte: "CarteBaguette", hasStampFeature: false },
-            { name : "Biscotti", carte: "CarteBiscotti", hasStampFeature: true},
-            { name : "Game_World", carte: "CarteGame_World", hasStampFeature: true},
-            { name : "Cosmitto", carte: "CarteCosmitto", hasStampFeature: true},
+            { name: "Biscotti", carte: "CarteBiscotti", hasStampFeature: true },
+            { name: "Game_World", carte: "CarteGame_World", hasStampFeature: true },
+            { name: "Cosmitto", carte: "CarteCosmitto", hasStampFeature: true },
             { name: "Carrefour", carte: "CarteCarrefour", hasStampFeature: false },
             { name: "Maison_Gourmandise", carte: "CarteMaison_Gourmandise", hasStampFeature: false },
-            { name : "Barista's", carte: "CarteBarista's", hasStampFeature: true},
-            { name: "Monoprix", carte: "CarteMonoprix",  hasStampFeature: false },
+            { name: "Barista's", carte: "CarteBarista's", hasStampFeature: true },
+            { name: "Monoprix", carte: "CarteMonoprix", hasStampFeature: false },
             { name: "Yves_Rocher", carte: "CarteYves_Rocher", hasStampFeature: false },
             { name: "MG", carte: "CarteMG", hasStampFeature: false },
-            { name : "Klitch", carte: "CarteKlitch", hasStampFeature: true},
-            { name : "Parad'Ice", carte: "CarteParad'Ice", hasStampFeature: true},
-            { name : "Munchies", carte: "CarteMunchies", hasStampFeature: true},
+            { name: "Klitch", carte: "CarteKlitch", hasStampFeature: true },
+            { name: "Parad'Ice", carte: "CarteParad'Ice", hasStampFeature: true },
+            { name: "Munchies", carte: "CarteMunchies", hasStampFeature: true },
 
-          ];
+        ];
 
-          fidelityList.forEach(item => {
+        fidelityList.forEach(item => {
             item.imageUrl = `https://raw.githubusercontent.com/sourdi/images/main/images/magasins/${item.name}.png`;
             item.carteUrl = `https://raw.githubusercontent.com/sourdi/images/main/images/cartes/${item.carte}.png`;
-            
-          
-          });
-        
-         
-          res.json(fidelityList)
+
+
+        });
+
+
+        res.json(fidelityList)
 
     } catch (error) {
         next(error);

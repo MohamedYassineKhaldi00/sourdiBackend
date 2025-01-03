@@ -80,41 +80,40 @@ class LoyaltyService {
             if (!card) {
                 throw new Error('Card not found');
             }
-
-            const fiveHours = 4 * 60 * 60 * 1000; // 5 hours in milliseconds
+    
+            const fourHours = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
             const lastUpdateString = card.stampDate[card.stampDate.length - 1] || 0;
             const lastUpdate = new Date(lastUpdateString).getTime();
             const currentTime = Date.now();
-
-            if (currentTime - lastUpdate < fiveHours) {
+    
+            if (currentTime - lastUpdate < fourHours) {
                 return { status: false, message: 'You can only update stamps once every 4 hours' };
-            } else {
-                card.stampsCollected += stampsToAdd;
-                card.stampDate.push(currentTime);
             }
-
+    
+            card.stampsCollected += stampsToAdd;
+            card.stampDate.push(currentTime);
+    
             if (card.stampsCollected >= 10) {
                 const excessStamps = card.stampsCollected - 10; // Calculate excess
                 const couponValue = getCouponValueForStore(card.storeName);
-
-
+    
                 card.coupons.push({
                     couponStore: card.storeName,
                     value: couponValue,
                     createdAt: currentTime
                 });
-
+    
                 card.stampsGroupsof10 += 1;
                 card.stampsCollected = excessStamps;
             }
-
-            await card.save();
+    
+            await card.save(); // Save only if all updates are valid and complete
             return { status: true, success: card };
         } catch (error) {
-            throw error;
+            console.error(`Error updating stamps: ${error.message}`);
+            throw error; // Rethrow error for external handling
         }
-
-        
+    
         function getCouponValueForStore(storeName) {
             const couponValues = {
                 "Klitch": "40%",
@@ -122,11 +121,12 @@ class LoyaltyService {
                 "Biscotti": "x2",
                 "Munchies": "Séléction gratuite",
                 "Cosmito": "1 acheté, 1 offert",
-                "Nom de l'enseigne": '1 acheté, 1 offert'
+                "Nom de l'enseigne": "1 acheté, 1 offert"
             };
             return couponValues[storeName] || "No Coupon";
         }
     }
+    
 
     static async getCouponsByUserId(userId) {
         try {
