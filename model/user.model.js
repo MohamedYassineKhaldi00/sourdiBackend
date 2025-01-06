@@ -24,6 +24,11 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
+    unreadNotifs : {
+        typee: Number,
+        required: false,
+        unique: false
+    },
     isMerchant: {
         type: Boolean,
         default : false,

@@ -93,6 +93,9 @@ class LoyaltyService {
             card.stampsCollected += stampsToAdd;
             card.stampDate.push(currentTime);
     
+            let couponCreated = false;
+
+
             if (card.stampsCollected >= 10) {
                 const excessStamps = card.stampsCollected - 10; // Calculate excess
                 const couponValue = getCouponValueForStore(card.storeName);
@@ -105,9 +108,24 @@ class LoyaltyService {
     
                 card.stampsGroupsof10 += 1;
                 card.stampsCollected = excessStamps;
+
+                couponCreated = true; // Flag to indicate a new coupon was created
+
             }
     
             await card.save(); // Save only if all updates are valid and complete
+            
+            if (couponCreated) {
+                // Increment unreadNotifs for the user
+                const userId = card.userId; // Ensure `userId` is part of your loyalty card model
+                if (userId) {
+                    await withTimeout(userModel.findByIdAndUpdate(
+                        userId,
+                        { $inc: { unreadNotifs: 1 } }, // Increment unreadNotifs by 1
+                    ));
+                }
+            }
+            
             return { status: true, success: card };
         } catch (error) {
             console.error(`Error updating stamps: ${error.message}`);
